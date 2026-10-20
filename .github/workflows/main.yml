@@ -1,0 +1,445 @@
+name: Build Flutter APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      flutter_version:
+        description: 'Flutter version'
+        required: true
+        default: '3.47.2'
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Gradle Cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ github.event.inputs.flutter_version }}
+          cache: true
+          channel: stable
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 7                                
+          dependencies:
+  flutter:
+    sdk: flutter
+  webview_flutter: ^4.2.0
+  ```html
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduMaster Pro | نظام إدارة المدرسة المتكامل</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Tajawal -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        },
+                        navy: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Tajawal', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f8fafc;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: #fff; color: #000; padding: 0; margin: 0; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 bg-slate-50 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+
+    <!-- LOGIN & SETUP OVERLAY -->
+    <div id="loginOverlay" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black overflow-y-auto">
+        <div class="bg-white/95 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8 relative overflow-hidden my-auto">
+            <div class="absolute -top-12 -left-12 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl"></div>
+            <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-teal-500/20 rounded-full blur-2xl"></div>
+
+            <div class="text-center mb-6 relative z-10">
+                <div class="w-16 h-16 bg-gradient-to-tr from-emerald-600 to-teal-400 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg shadow-emerald-500/30 mx-auto mb-3">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <h2 class="text-2xl font-black text-slate-900">نظام EduMaster Pro الذكي</h2>
+                <p id="loginSubtitle" class="text-xs font-semibold text-slate-500 mt-1">بوابة الدخول الآمنة وإدارة البيانات المدرسية</p>
+            </div>
+
+            <!-- INITIAL SETUP WIZARD (Runs when 0 users exist) -->
+            <div id="setupWizardBox" class="hidden space-y-4 relative z-10">
+                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl text-xs text-emerald-900 font-medium">
+                    <p class="font-bold text-sm text-emerald-800 mb-1"><i class="fa-solid fa-sparkles ml-1"></i> مرحباً بك في معالج الإعداد!</p>
+                    <p>النظام خالٍ تماماً من البيانات الوهمية. يرجى إنشاء حساب <strong>المدير العام الأول</strong> للبدء بتشغيل وإدارة المدرسة.</p>
+                </div>
+                <form onsubmit="handleInitialSetup(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">الاسم الكامل للمدير العام</label>
+                        <input type="text" id="initAdminName" required placeholder="مثال: د. أحمد المنصور" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">اسم المستخدم للمدير</label>
+                        <input type="text" id="initAdminUsername" required placeholder="admin" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">كلمة السر الخاصة بالمدير</label>
+                        <input type="password" id="initAdminPassword" required placeholder="••••••••" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/30 transition hover:from-emerald-700 hover:to-teal-700">
+                        <i class="fa-solid fa-check-circle ml-1.5"></i> إنشاء حساب المدير وتفعيل النظام
+                    </button>
+                </form>
+            </div>
+
+            <!-- NORMAL LOGIN FORM -->
+            <div id="normalLoginBox" class="space-y-4 relative z-10">
+                <div class="flex bg-slate-100 p-1 rounded-xl mb-4 text-xs font-bold">
+                    <button type="button" id="tabStaffBtn" onclick="switchLoginTab('staff')" class="flex-1 py-2 rounded-lg bg-white shadow text-emerald-700 transition">الكادر الإداري والتعليمي</button>
+                    <button type="button" id="tabStudentBtn" onclick="switchLoginTab('student')" class="flex-1 py-2 rounded-lg text-slate-500 hover:text-slate-900 transition">الطالب / ولي الأمر</button>
+                </div>
+
+                <!-- Staff Login Form -->
+                <form id="staffLoginForm" onsubmit="handleStaffLogin(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">اسم المستخدم</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-user absolute right-3 top-3 text-slate-400 text-xs"></i>
+                            <input type="text" id="staffUsername" required placeholder="أدخل اسم المستخدم" class="w-full pr-9 pl-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">كلمة السر</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-lock absolute right-3 top-3 text-slate-400 text-xs"></i>
+                            <input type="password" id="staffPassword" required placeholder="••••••••" class="w-full pr-9 pl-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/30 transition">
+                        <i class="fa-solid fa-right-to-bracket ml-1.5"></i> تسجيل الدخول
+                    </button>
+                </form>
+
+                <!-- Student Login Form -->
+                <form id="studentLoginForm" onsubmit="handleStudentLogin(event)" class="space-y-3 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">اسم الطالب أو رمز الطالب</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-id-card absolute right-3 top-3 text-slate-400 text-xs"></i>
+                            <input type="text" id="studentCode" required placeholder="أدخل رمز الطالب أو اسمه" class="w-full pr-9 pl-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">الرمز السري PIN الخاص بالطالب/الولي</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-shield-halved absolute right-3 top-3 text-slate-400 text-xs"></i>
+                            <input type="password" id="studentPin" required placeholder="••••" class="w-full pr-9 pl-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-teal-600/30 transition">
+                        <i class="fa-solid fa-user-shield ml-1.5"></i> دخول بوابة ولي الأمر والطالب
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN HEADER -->
+    <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-xl border-b border-slate-800 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand -->
+                <div class="flex items-center space-x-3 space-x-reverse">
+                    <div class="bg-gradient-to-tr from-emerald-500 to-teal-400 p-2.5 rounded-xl text-white shadow-md shadow-emerald-500/20">
+                        <i class="fa-solid fa-graduation-cap text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-black text-lg leading-tight tracking-wide text-white">EduMaster Pro</h1>
+                        <p class="text-[11px] text-emerald-400 font-semibold">النظام المردسي المتكامل</p>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex items-center space-x-3 space-x-reverse">
+                    <div class="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 flex items-center space-x-2 space-x-reverse">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span id="activeRoleDisplay" class="text-xs font-bold text-emerald-300">المدير العام</span>
+                    </div>
+
+                    <div class="hidden md:flex items-center space-x-3 space-x-reverse border-r border-slate-800 pr-3">
+                        <div class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow">
+                            <span id="headerUserInitials">A</span>
+                        </div>
+                        <div>
+                            <div id="headerUserName" class="text-xs font-bold text-slate-100">المستخدم</div>
+                            <div id="headerUserTitle" class="text-[10px] text-slate-400">الرتبة</div>
+                        </div>
+                    </div>
+
+                    <button onclick="logout()" title="تسجيل الخروج" class="p-2.5 bg-slate-800 hover:bg-rose-600/20 hover:text-rose-400 text-slate-300 rounded-xl border border-slate-700 transition">
+                        <i class="fa-solid fa-power-off text-xs"></i>
+                    </button>
+
+                    <button onclick="toggleMobileMenu()" class="md:hidden p-2 text-slate-300 hover:text-white">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN BODY -->
+    <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-6">
+
+        <!-- SIDEBAR NAVIGATION -->
+        <aside id="sidebar" class="w-full md:w-64 shrink-0 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 self-start sticky top-20 hidden md:block no-print">
+            <div class="mb-4 px-3 py-2 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-900 text-xs font-bold flex items-center justify-between">
+                <span>الصلاحية النشطة</span>
+                <span id="sidebarRoleTag" class="px-2 py-0.5 bg-emerald-600 text-white rounded-md text-[10px]">مدير</span>
+            </div>
+
+            <nav class="space-y-1" id="navContainer"></nav>
+        </aside>
+
+        <!-- DYNAMIC CONTENT VIEW -->
+        <main class="flex-1 min-w-0 space-y-6">
+            <!-- Global Announcement Banner -->
+            <div id="announcementBanner" class="hidden bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-4 rounded-2xl shadow-md flex items-center justify-between relative overflow-hidden">
+                <div class="flex items-center space-x-3 space-x-reverse z-10">
+                    <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-bullhorn text-lg"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-xs sm:text-sm">إعلان مدرسة إداري رسمي</h4>
+                        <p id="latestAnnouncementText" class="text-xs text-emerald-100 mt-0.5"></p>
+                    </div>
+                </div>
+                <button onclick="dismissAnnouncement()" class="text-white/80 hover:text-white p-1.5 z-10">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div id="contentView" class="space-y-6"></div>
+        </main>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="mt-auto bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 no-print">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-2 space-x-reverse font-bold text-slate-700">
+                <i class="fa-solid fa-graduation-cap text-emerald-600"></i>
+                <span>EduMaster Pro - نظام إدارة المدرسة الصافي والتفاعلي</span>
+            </div>
+            <p>© جميع الحقوق محفوظة. نظام متكامل بخيارات حقيقية وبدون بيانات وهمية.</p>
+        </div>
+    </footer>
+
+    <!-- MODAL CONTAINER -->
+    <div id="modalBackdrop" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div id="modalContent" class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar p-6 border border-slate-100"></div>
+    </div>
+
+    <script>
+        // LOCAL STORAGE DATABASE INIT
+        const DB_KEY = 'EDUMASTER_ZERO_DATA_DB_2026';
+
+        function loadDB() {
+            const raw = localStorage.getItem(DB_KEY);
+            if (!raw) {
+                return {
+                    users: [],
+                    lessons: [],
+                    assignments: [],
+                    submissions: [],
+                    grades: [],
+                    attendance: [],
+                    behavior: [],
+                    announcements: [],
+                    parentMessages: []
+                };
+            }
+            return JSON.parse(raw);
+        }
+
+        function saveDB(dbData) {
+            localStorage.setItem(DB_KEY, JSON.stringify(dbData));
+        }
+
+        let db = loadDB();
+        let currentUser = null;
+        let activeTab = 'dashboard';
+        let chartInstance = null;
+
+        const navItems = [
+            { id: 'dashboard', name: 'لوحة التحكم والمؤشرات', icon: 'fa-chart-pie', roles: ['principal', 'vice_principal', 'teacher', 'student'] },
+            { id: 'users', name: 'إدارة الكادر والطلاب', icon: 'fa-users-gear', roles: ['principal', 'vice_principal'] },
+            { id: 'lessons', name: 'الدروس والجدول', icon: 'fa-book-open', roles: ['principal', 'vice_principal', 'teacher', 'student'] },
+            { id: 'assignments', name: 'الواجبات والتكليفات', icon: 'fa-tasks', roles: ['principal', 'vice_principal', 'teacher', 'student'] },
+            { id: 'grades', name: 'دفتر الدرجات والنتائج', icon: 'fa-award', roles: ['principal', 'vice_principal', 'teacher', 'student'] },
+            { id: 'attendance', name: 'رصد الحضور والغياب', icon: 'fa-clipboard-user', roles: ['principal', 'vice_principal', 'teacher'] },
+            { id: 'behavior', name: 'سجل السلوك والانضباط', icon: 'fa-shield-heart', roles: ['principal', 'vice_principal', 'teacher'] },
+            { id: 'parent_messages', name: 'إشعارات أولياء الأمور', icon: 'fa-paper-plane', roles: ['principal', 'vice_principal', 'teacher'] },
+            { id: 'announcements', name: 'التعاميم والإعلانات', icon: 'fa-bullhorn', roles: ['principal', 'vice_principal', 'teacher', 'student'] },
+            { id: 'system_settings', name: 'إعدادات النظام والأمان', icon: 'fa-sliders', roles: ['principal'] }
+        ];
+
+        window.onload = function() {
+            checkInitialSetupState();
+        };
+
+        function checkInitialSetupState() {
+            const hasPrincipal = db.users.some(u => u.role === 'principal');
+            const setupWizardBox = document.getElementById('setupWizardBox');
+            const normalLoginBox = document.getElementById('normalLoginBox');
+            const subtitle = document.getElementById('loginSubtitle');
+
+            if (!hasPrincipal) {
+                setupWizardBox.classList.remove('hidden');
+                normalLoginBox.classList.add('hidden');
+                subtitle.innerText = 'إعداد النظام لأول مرة - تفعيل حساب المدير';
+            } else {
+                setupWizardBox.classList.add('hidden');
+                normalLoginBox.classList.remove('hidden');
+                subtitle.innerText = 'بوابة الدخول الآمنة إلى نظام المدرسة';
+            }
+        }
+
+        function handleInitialSetup(e) {
+            e.preventDefault();
+            const name = document.getElementById('initAdminName').value.trim();
+            const username = document.getElementById('initAdminUsername').value.trim();
+            const password = document.getElementById('initAdminPassword').value.trim();
+
+            const adminUser = {
+                id: 'USR-' + Date.now(),
+                name: name,
+                username: username,
+                password: password,
+                role: 'principal',
+                roleTitle: 'المدير العام (صلاحيات كاملة)'
+            };
+
+            db.users.push(adminUser);
+            saveDB(db);
+
+            currentUser = adminUser;
+            loginSuccess();
+            showToast('تم إنشاء حساب المدير وتفعيل النظام بنجاح!');
+        }
+
+        function switchLoginTab(tab) import 'package:flutter/material.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+
+void main() {
+  runApp(const MaterialApp(
+    home: SchoolAppScreen(),
+    debugShowCheckedModeBanner: false,
+  ));
+}
+
+class SchoolAppScreen extends StatefulWidget {
+  const SchoolAppScreen({Key? key}) : super(key: key);
+
+  @override
+  State<SchoolAppScreen> createState() => _SchoolAppScreenState();
+}
+
+class _SchoolAppScreenState extends State<SchoolAppScreen> {
+  late final WebViewController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    // إذا قمت برفع الموقع على رابط، ضع الرابط هنا. أو يمكنك تحميله محلياً.
+    controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..loadRequest(Uri.parse('https://yourusername.github.io/school-system/')); // ضع رابط موقعك المدرسي هنا
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('ثانوية أم الربيعين - نظام الإدارة'),
+        backgroundColor: Colors.indigo,
+        centerTitle: true,
+      ),
+      body: WebViewWidget(controller: controller),
+    );
+  }
+}
